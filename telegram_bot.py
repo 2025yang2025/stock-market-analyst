@@ -6,11 +6,14 @@ from settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 def send_telegram_message(text: str) -> bool:
     """
-    發送純文字/Markdown 訊息至 Telegram
+    發送訊息至 Telegram；若未設定金鑰，則轉為「測試模式」直接在 Terminal 印出
     """
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("❌ 錯誤：未檢測到 TELEGRAM_BOT_TOKEN 或 TELEGRAM_CHAT_ID 環境變數！")
-        return False
+        print("\n================== ⚠️ 測試模式：未偵測到 Telegram 金鑰 ==================")
+        print("【預覽即將發送至 Telegram 的報告內容】：\n")
+        print(text)
+        print("======================================================================")
+        return True  # 測試模式下視為執行成功
         
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
