@@ -8,19 +8,30 @@ import datetime
 from settings import HOLDING_TRADING_DAYS
 from telegram_bot import send_telegram_message, format_report_message
 
-# 1. 分析師推薦紀錄 (實務上可對接資料庫或爬蟲)
+# 常用/測試股票名稱對照表
+STOCK_NAME_MAP = {
+    "2330": "台積電",
+    "2382": "廣達",
+    "2454": "聯發科",
+    "2317": "鴻海",
+    "3231": "緯創",
+    "2308": "台達電",
+    "2303": "聯電",
+}
+
+# 1. 分析師推薦紀錄 (套用真實券商與分析師姓名範例)
 sample_recommendations = [
-    {"analyst": "張分析師 (A券商)", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1050},
-    {"analyst": "張分析師 (A券商)", "ticker": "2382", "rec_date": "2026-05-11", "target_price": 320},
-    {"analyst": "張分析師 (A券商)", "ticker": "2454", "rec_date": "2026-05-18", "target_price": 1300},
-    {"analyst": "李分析師 (B券商)", "ticker": "2317", "rec_date": "2026-05-04", "target_price": 220},
-    {"analyst": "李分析師 (B券商)", "ticker": "3231", "rec_date": "2026-05-12", "target_price": 110},
-    {"analyst": "李分析師 (B券商)", "ticker": "2308", "rec_date": "2026-05-20", "target_price": 380},
-    {"analyst": "王分析師 (C券商)", "ticker": "2330", "rec_date": "2026-05-05", "target_price": 1000},
-    {"analyst": "王分析師 (C券商)", "ticker": "2303", "rec_date": "2026-05-15", "target_price": 60},
+    {"analyst": "凱基 - 張家銘", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1050},
+    {"analyst": "凱基 - 張家銘", "ticker": "2382", "rec_date": "2026-05-11", "target_price": 320},
+    {"analyst": "凱基 - 張家銘", "ticker": "2454", "rec_date": "2026-05-18", "target_price": 1300},
+    {"analyst": "富邦 - 陳偉倫", "ticker": "2317", "rec_date": "2026-05-04", "target_price": 220},
+    {"analyst": "富邦 - 陳偉倫", "ticker": "3231", "rec_date": "2026-05-12", "target_price": 110},
+    {"analyst": "富邦 - 陳偉倫", "ticker": "2308", "rec_date": "2026-05-20", "target_price": 380},
+    {"analyst": "元大 - 林志豪", "ticker": "2330", "rec_date": "2026-05-05", "target_price": 1000},
+    {"analyst": "元大 - 林志豪", "ticker": "2303", "rec_date": "2026-05-15", "target_price": 60},
 ]
 
-# 2. 自動抓取歷史價格 API
+# 2. 自動抓取歷史價格 API (FinMind)
 def fetch_stock_price_finmind(ticker, start_date):
     url = f"https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id={ticker}&start_date={start_date}"
     try:
@@ -46,7 +57,9 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
     stock_prices = {}
     tickers = recs_df['ticker'].unique()
     for t in tickers:
-        print(f"正在抓取股票 {t} 歷史價格...")
+        stock_name = STOCK_NAME_MAP.get(t, "")
+        display_name = f"{t} {stock_name}".strip()
+        print(f"正在抓取股票 {display_name} 歷史價格...")
         stock_prices[t] = fetch_stock_price_finmind(t, min_date)
         
     results = []
@@ -57,7 +70,9 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
         rec_date = row['rec_date']
         target_price = row.get('target_price', None)
         
+        stock_name = STOCK_NAME_MAP.get(ticker, "")
         prices = stock_prices.get(ticker)
+        
         if prices is None or prices.empty:
             continue
             
@@ -84,6 +99,7 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
         results.append({
             "analyst": analyst,
             "ticker": ticker,
+            "stock_name": stock_name,
             "rec_date": rec_date.strftime("%Y-%m-%d"),
             "entry_price": round(p0, 2),
             "price_1m_after": round(p_end, 2),
@@ -109,9 +125,11 @@ if __name__ == "__main__":
         ).reset_index().sort_values(by="win_rate_pct", ascending=False)
 
         report_text = format_report_message(summary, details_df)
-        print("\n正在發送勝率報告至 Telegram...")
+        print("\n正在處理勝率報告...")
         
         if send_telegram_message(report_text):
-            print("✅ Telegram 報表發送成功！")
+            print("✅ 報表處理/發送成功！")
         else:
-            print("❌ Telegram 發送失敗，請檢查環境變數設定。")
+            print("❌ 處理失敗，請檢查設定。")
+    else:
+        print("沒有足夠的歷史資料可進行計算。")
