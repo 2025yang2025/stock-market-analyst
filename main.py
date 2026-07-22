@@ -8,18 +8,7 @@ import datetime
 from settings import HOLDING_TRADING_DAYS
 from telegram_bot import send_telegram_message, format_report_message
 
-# 常用/測試股票名稱對照表
-STOCK_NAME_MAP = {
-    "2330": "台積電",
-    "2382": "廣達",
-    "2454": "聯發科",
-    "2317": "鴻海",
-    "3231": "緯創",
-    "2308": "台達電",
-    "2303": "聯電",
-}
-
-# 1. 分析師推薦紀錄 (套用真實券商與分析師姓名範例)
+# 1. 分析師推薦紀錄
 sample_recommendations = [
     {"analyst": "凱基 - 張家銘", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1050},
     {"analyst": "凱基 - 張家銘", "ticker": "2382", "rec_date": "2026-05-11", "target_price": 320},
@@ -31,7 +20,23 @@ sample_recommendations = [
     {"analyst": "元大 - 林志豪", "ticker": "2303", "rec_date": "2026-05-15", "target_price": 60},
 ]
 
-# 2. 自動抓取歷史價格 API (FinMind)
+# 2. 自動抓取台股全清單對照表 (取得股票中文名稱)
+def fetch_stock_name_map():
+    url = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo"
+    name_map = {}
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            if data.get('msg') == 'success':
+                for item in data.get('data', []):
+                    # 建立 dict 映射: {"2330": "台積電", "2382": "廣達"}
+                    name_map[item.get('stock_id')] = item.get('stock_name', '')
+    except Exception as e:
+        print(f"⚠️ 抓取股票名稱清單失敗: {e}")
+    return name_map
+
+# 3. 自動抓取歷史價格 API
 def fetch_stock_price_finmind(ticker, start_date):
     url = f"https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id={ticker}&start_date={start_date}"
     try:
@@ -47,17 +52,20 @@ def fetch_stock_price_finmind(ticker, start_date):
         print(f"抓取 {ticker} 股價失敗: {e}")
     return pd.Series(dtype=float)
 
-# 3. 評估分析師勝率
+# 4. 評估分析師勝率
 def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
     recs_df = pd.DataFrame(recs_list)
     recs_df['rec_date'] = pd.to_datetime(recs_df['rec_date'])
+    
+    # 一次性載入股票名稱字典
+    stock_name_map = fetch_stock_name_map()
     
     min_date = (recs_df['rec_date'].min() - datetime.timedelta(days=5)).strftime("%Y-%m-%d")
     
     stock_prices = {}
     tickers = recs_df['ticker'].unique()
     for t in tickers:
-        stock_name = STOCK_NAME_MAP.get(t, "")
+        stock_name = stock_name_map.get(str(t), "")
         display_name = f"{t} {stock_name}".strip()
         print(f"正在抓取股票 {display_name} 歷史價格...")
         stock_prices[t] = fetch_stock_price_finmind(t, min_date)
@@ -65,14 +73,15 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
     results = []
     
     for idx, row in recs_df.iterrows():
-        ticker = row['ticker']
+        ticker = str(row['ticker'])
         analyst = row['analyst']
         rec_date = row['rec_date']
         target_price = row.get('target_price', None)
         
-        stock_name = STOCK_NAME_MAP.get(ticker, "")
-        prices = stock_prices.get(ticker)
+        # 自動取得中文名稱
+        stock_name = stock_name_map.get(ticker, "")
         
+        prices = stock_prices.get(ticker)
         if prices is None or prices.empty:
             continue
             
