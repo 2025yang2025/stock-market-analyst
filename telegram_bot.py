@@ -13,7 +13,7 @@ def send_telegram_message(text: str) -> bool:
         print("【預覽即將發送至 Telegram 的報告內容】：\n")
         print(text)
         print("======================================================================")
-        return True  # 測試模式下視為執行成功
+        return True
         
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -56,10 +56,18 @@ def format_report_message(summary_df, details_df) -> str:
     msg += "🔍 *【最新推薦追蹤明細】*\n"
     msg += "-----------------------------------\n"
     
-    recent_details = details_df.head(5)
+    recent_details = details_df.head(10)  # 顯示前 10 筆明細
     for _, row in recent_details.iterrows():
         status = "✅ 上漲" if row['is_win'] == 1 else "🔻 下跌"
-        msg += f"• *{row['ticker']}* ({row['analyst']})\n"
+        
+        # 組合「代號 + 中文名稱」
+        stock_name = row.get('stock_name', '')
+        if stock_name:
+            stock_disp = f"{row['ticker']} {stock_name}"
+        else:
+            stock_disp = f"{row['ticker']}"
+            
+        msg += f"• *{stock_disp}* ({row['analyst']})\n"
         msg += f"  推薦日: {row['rec_date']} | 入場價: `{row['entry_price']}`\n"
         msg += f"  1M後價格: `{row['price_1m_after']}` ({row['return_1m_pct']:+.2f}%) [{status}]\n\n"
         
