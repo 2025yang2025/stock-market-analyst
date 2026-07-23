@@ -68,7 +68,7 @@ def format_report_message(summary_df, details_df):
         
     msg += "\n-----------------------------------\n"
     
-    # 3. 歷史推薦績效明細（精準分辨「結算勝敗」與「進行中追蹤」）
+        # 3. 歷史推薦績效明细
     msg += "🔍 *推薦績效明細*\n"
     recent_details = details_df.head(15)
     for idx, row in recent_details.iterrows():
@@ -76,7 +76,8 @@ def format_report_message(summary_df, details_df):
             status = "✅ 勝" if row['is_win'] == 1 else "❌ 敗"
             price_str = f"1月後: `{row['price_1m_after']}` ({row['return_1m_pct']:+.2f}% {status})"
         else:
-            price_str = f"最新價: `{row['price_1m_after']}` (目前 {row['return_1m_pct']:+.2f}% ⏳ 追蹤中)"
+            # 💡 直接拿實體數字 row['latest_price'] 呈現最新價
+            price_str = f"最新價: `{row['latest_price']}` (目前 {row['return_1m_pct']:+.2f}% ⏳ 追蹤中)"
             
         stock_disp = f"{row['ticker']} {row['stock_name']}".strip() if row.get('stock_name') else row['ticker']
         rec_date = row.get('rec_date', '未知日期')
@@ -84,5 +85,3 @@ def format_report_message(summary_df, details_df):
         msg += f"• *{stock_disp}* ({row['analyst']})\n"
         msg += f"  📅 推薦日期: `{rec_date}`\n"
         msg += f"  💰 買入價: `{row['entry_price']}` ➔ {price_str}\n\n"
-        
-    return msg
