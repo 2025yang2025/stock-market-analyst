@@ -1,6 +1,7 @@
 # main.py
 import urllib.request
 import json
+import os
 import pandas as pd
 import numpy as np
 import datetime
@@ -8,64 +9,27 @@ import datetime
 from settings import HOLDING_TRADING_DAYS
 from telegram_bot import send_telegram_message, format_report_message
 
-# 1. 分析師與投顧推薦紀錄 (全陣容整合版)
-sample_recommendations = [
-    # --- 🏢 金控系/法人賣方投顧研究團隊 ---
-    {"analyst": "元大投顧 - 顏承暉團隊", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1050},
-    {"analyst": "元大投顧 - 顏承暉團隊", "ticker": "2454", "rec_date": "2026-05-18", "target_price": 1300},
-    
-    {"analyst": "凱基投顧 - 朱家傑團隊", "ticker": "2382", "rec_date": "2026-05-11", "target_price": 320},
-    {"analyst": "凱基投顧 - 朱家傑團隊", "ticker": "3231", "rec_date": "2026-05-19", "target_price": 125},
-    
-    {"analyst": "富邦投顧 - 蕭乾祥", "ticker": "2317", "rec_date": "2026-05-04", "target_price": 220},
-    {"analyst": "富邦投顧 - 蕭乾祥", "ticker": "2308", "rec_date": "2026-05-20", "target_price": 380},
-    
-    {"analyst": "群益投顧 - 廖健佑團隊", "ticker": "2303", "rec_date": "2026-05-06", "target_price": 58},
-    {"analyst": "群益投顧 - 廖健佑團隊", "ticker": "2330", "rec_date": "2026-05-21", "target_price": 1020},
-    
-    {"analyst": "國泰投顧 - 蘇鼎文團隊", "ticker": "2454", "rec_date": "2026-05-04", "target_price": 1250},
-    {"analyst": "國泰投顧 - 蘇鼎文團隊", "ticker": "2317", "rec_date": "2026-05-13", "target_price": 210},
+# 1. 讀取推薦資料 (優先讀取 recommendations.json，支援全台股動態擴充)
+def load_recommendations():
+    json_path = "recommendations.json"
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                print(f"📂 成功載入 {json_path}，共有 {len(data)} 筆推薦紀錄。")
+                return data
+        except Exception as e:
+            print(f"⚠️ 讀取 {json_path} 失敗，使用內建預設值: {e}")
+            
+    # 備用預設紀錄
+    return [
+        {"analyst": "老王 (王倚聖)", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1050},
+        {"analyst": "萬寶 - 莊正賢", "ticker": "2454", "rec_date": "2026-05-05", "target_price": 1300},
+        {"analyst": "林睿閎", "ticker": "2317", "rec_date": "2026-05-06", "target_price": 220},
+        {"analyst": "元大投顧 - 顏承暉團隊", "ticker": "2382", "rec_date": "2026-05-07", "target_price": 320},
+    ]
 
-    # --- 📺 電視/網路熱門分析師 & 商業投顧名師 ---
-    {"analyst": "老王 (王倚聖)", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1050},
-    {"analyst": "老王 (王倚聖)", "ticker": "2382", "rec_date": "2026-05-15", "target_price": 320},
-    
-    {"analyst": "萬寶 - 莊正賢", "ticker": "2454", "rec_date": "2026-05-05", "target_price": 1300},
-    {"analyst": "萬寶 - 莊正賢", "ticker": "3231", "rec_date": "2026-05-18", "target_price": 125},
-    
-    {"analyst": "林睿閎", "ticker": "2317", "rec_date": "2026-05-06", "target_price": 220},
-    {"analyst": "林睿閎", "ticker": "2308", "rec_date": "2026-05-19", "target_price": 380},
-    
-    {"analyst": "蔡豐勝", "ticker": "2303", "rec_date": "2026-05-07", "target_price": 58},
-    {"analyst": "蔡豐勝", "ticker": "2330", "rec_date": "2026-05-20", "target_price": 1080},
-    
-    {"analyst": "涂敏豐", "ticker": "2382", "rec_date": "2026-05-08", "target_price": 315},
-    {"analyst": "涂敏豐", "ticker": "2454", "rec_date": "2026-05-21", "target_price": 1320},
-    
-    {"analyst": "劉妍希", "ticker": "3231", "rec_date": "2026-05-11", "target_price": 120},
-    {"analyst": "劉妍希", "ticker": "2317", "rec_date": "2026-05-22", "target_price": 225},
-    
-    {"analyst": "品豐大中華 - 連乾文", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1080},
-    {"analyst": "大華投顧 - 蘇建豐", "ticker": "2382", "rec_date": "2026-05-12", "target_price": 330},
-    
-    # --- 🌟 新增熱門名師 ---
-    {"analyst": "陳威良", "ticker": "2454", "rec_date": "2026-05-07", "target_price": 1280},
-    {"analyst": "陳威良", "ticker": "2382", "rec_date": "2026-05-18", "target_price": 325},
-    
-    {"analyst": "阮蕙慈", "ticker": "2330", "rec_date": "2026-05-05", "target_price": 1060},
-    {"analyst": "阮蕙慈", "ticker": "3231", "rec_date": "2026-05-19", "target_price": 122},
-    
-    {"analyst": "李蜀芳", "ticker": "2317", "rec_date": "2026-05-08", "target_price": 218},
-    {"analyst": "李蜀芳", "ticker": "2308", "rec_date": "2026-05-21", "target_price": 375},
-    
-    {"analyst": "王映亮", "ticker": "2303", "rec_date": "2026-05-11", "target_price": 59},
-    {"analyst": "王映亮", "ticker": "2454", "rec_date": "2026-05-22", "target_price": 1310},
-    
-    {"analyst": "許毓玲", "ticker": "2382", "rec_date": "2026-05-06", "target_price": 318},
-    {"analyst": "許毓玲", "ticker": "2330", "rec_date": "2026-05-14", "target_price": 1040},
-]
-
-# 2. 自動抓取台股全清單對照表 (動態取得股票中文名稱)
+# 2. 自動抓取台股全清單對照表 (FinMind 全台股上市上櫃名稱)
 def fetch_stock_name_map():
     url = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo"
     name_map = {}
@@ -80,7 +44,7 @@ def fetch_stock_name_map():
         print(f"⚠️ 抓取股票名稱清單失敗: {e}")
     return name_map
 
-# 3. 自動抓取歷史價格 API
+# 3. 自動抓取歷史價格 API (通用全台股任意代碼)
 def fetch_stock_price_finmind(ticker, start_date):
     url = f"https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id={ticker}&start_date={start_date}"
     try:
@@ -101,18 +65,18 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
     recs_df = pd.DataFrame(recs_list)
     recs_df['rec_date'] = pd.to_datetime(recs_df['rec_date'])
     
-    print("正在取得台股股票名稱對照表...")
+    print("正在取得台股全清單股票名稱對照表...")
     stock_name_map = fetch_stock_name_map()
     
     min_date = (recs_df['rec_date'].min() - datetime.timedelta(days=5)).strftime("%Y-%m-%d")
     
     stock_prices = {}
-    tickers = recs_df['ticker'].unique()
+    tickers = recs_df['ticker'].astype(str).unique()
     for t in tickers:
-        stock_name = stock_name_map.get(str(t), "")
+        stock_name = stock_name_map.get(t, "")
         display_name = f"{t} {stock_name}".strip()
         print(f"正在抓取股票 {display_name} 歷史價格...")
-        stock_prices[str(t)] = fetch_stock_price_finmind(t, min_date)
+        stock_prices[t] = fetch_stock_price_finmind(t, min_date)
         
     results = []
     
@@ -165,7 +129,8 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
     return pd.DataFrame(results)
 
 if __name__ == "__main__":
-    details_df = evaluate_analyst_performance(sample_recommendations)
+    recommendations = load_recommendations()
+    details_df = evaluate_analyst_performance(recommendations)
 
     if not details_df.empty:
         summary = details_df.groupby("analyst").agg(
