@@ -1,0 +1,10 @@
+[
+  {"analyst": "老王 (王倚聖)", "ticker": "2330", "rec_date": "2026-05-04", "target_price": 1050},
+  {"analyst": "老王 (王倚聖)", "ticker": "3661", "rec_date": "2026-05-10", "target_price": 3100},
+  {"analyst": "萬寶 - 莊正賢", "ticker": "1519", "rec_date": "2026-05-05", "target_price": 180},
+  {"analyst": "萬寶 - 莊正賢", "ticker": "3324", "rec_date": "2026-05-12", "target_price": 650},
+  {"analyst": "林睿閎", "ticker": "3450", "rec_date": "2026-05-06", "target_price": 320},
+  {"analyst": "蔡豐勝", "ticker": "6230", "rec_date": "2026-05-07", "target_price": 150},
+  {"analyst": "元大投顧 - 顏承暉團隊", "ticker": "2379", "rec_date": "2026-05-08", "target_price": 580},
+  {"analyst": "凱基投顧 - 朱家傑團隊", "ticker": "6669", "rec_date": "2026-05-11", "target_price": 2200}
+]
