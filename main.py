@@ -87,17 +87,28 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
         p0_date = available_dates[0]
         p0_idx = prices.index.get_loc(p0_date)
         
-        future_prices = prices.iloc[p0_idx : p0_idx + holding_days + 1]
-        if len(future_prices) <= 1:
-            continue
-            
+        # 取得從推薦日開始的所有價格
+        future_prices = prices.iloc[p0_idx:]
+        
         p0 = future_prices.iloc[0]
-        p_end = future_prices.iloc[-1]
+        
+        # 💡 關鍵修正：檢查交易日天數是否真的滿 1 個月 (holding_days)
+        if len(future_prices) >= holding_days + 1:
+            # 已滿 1 個月：精準取第 holding_days 天的價格
+            p_end = future_prices.iloc[holding_days]
+            is_completed = True
+        else:
+            # 未滿 1 個月：拿目前最新價格（最新收盤價）
+            p_end = future_prices.iloc[-1]
+            is_completed = False
+            
         p_max = future_prices.max()
         
         return_1m = (p_end - p0) / p0
         max_return_1m = (p_max - p0) / p0
-        is_win = 1 if return_1m > 0 else 0
+        
+        # 只對已到期的推薦判定最終勝負，未到期不納入勝率分母
+        is_win = 1 if (return_1m > 0 and is_completed) else 0
         reach_target = 1 if (target_price and p_max >= target_price) else 0
         
         results.append({
@@ -106,11 +117,12 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
             "stock_name": stock_name,
             "rec_date": rec_date.strftime("%Y-%m-%d"),
             "entry_price": round(p0, 2),
-            "price_1m_after": round(p_end, 2),
+            "price_1m_after": round(p_end, 2) if is_completed else "追蹤中",
             "max_price_1m": round(p_max, 2),
             "return_1m_pct": round(return_1m * 100, 2),
             "max_return_pct": round(max_return_1m * 100, 2),
             "is_win": is_win,
+            "is_completed": is_completed,  # 標示是否已到期
             "reach_target": reach_target
         })
         
