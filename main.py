@@ -9,18 +9,22 @@ import datetime
 from settings import HOLDING_TRADING_DAYS
 from telegram_bot import send_telegram_message, format_report_message
 
+# 1. 讀取推薦資料 (優先讀取 recommendations.json)
 def load_recommendations():
     json_path = "recommendations.json"
     if os.path.exists(json_path):
         try:
             with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                print(f"📂 成功載入 {json_path}，共 {len(data)} 筆紀錄。")
+                print(f"📂 成功載入 {json_path}，共 {len(data)} 筆推薦紀錄。")
                 return data
         except Exception as e:
             print(f"⚠️ 讀取 {json_path} 失敗: {e}")
+    else:
+        print(f"⚠️ 找不到 {json_path}，請確認檔案是否存在。")
     return []
 
+# 2. 自動抓取台股全清單對照表 (FinMind 全台股上市上櫃名稱)
 def fetch_stock_name_map():
     url = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo"
     name_map = {}
@@ -35,6 +39,7 @@ def fetch_stock_name_map():
         print(f"⚠️ 抓取股票名稱清單失敗: {e}")
     return name_map
 
+# 3. 自動抓取歷史價格 API (通用全台股)
 def fetch_stock_price_finmind(ticker, start_date):
     url = f"https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id={ticker}&start_date={start_date}"
     try:
@@ -47,10 +52,14 @@ def fetch_stock_price_finmind(ticker, start_date):
                 df = df.set_index('date').sort_index()
                 return df['close']
     except Exception as e:
-        print(f"抓取 {ticker} 股價失敗: {e}")
+        print(f"❌ 抓取 {ticker} 股價失敗: {e}")
     return pd.Series(dtype=float)
 
+# 4. 評估分析師勝率與績效
 def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
+    if not recs_list:
+        return pd.DataFrame()
+
     recs_df = pd.DataFrame(recs_list)
     recs_df['rec_date'] = pd.to_datetime(recs_df['rec_date'])
     
@@ -89,17 +98,18 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
         
         # 取得從推薦日開始的所有價格
         future_prices = prices.iloc[p0_idx:]
-        
+        if len(future_prices) == 0:
+            continue
+
         p0 = future_prices.iloc[0]
+        latest_price = future_prices.iloc[-1]  # 💡 保存最新的實體股價數字
         
-        # 💡 關鍵修正：檢查交易日天數是否真的滿 1 個月 (holding_days)
+        # 💡 檢查交易日天數是否滿 1 個月 (holding_days)
         if len(future_prices) >= holding_days + 1:
-            # 已滿 1 個月：精準取第 holding_days 天的價格
             p_end = future_prices.iloc[holding_days]
             is_completed = True
         else:
-            # 未滿 1 個月：拿目前最新價格（最新收盤價）
-            p_end = future_prices.iloc[-1]
+            p_end = latest_price
             is_completed = False
             
         p_max = future_prices.max()
@@ -107,7 +117,7 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
         return_1m = (p_end - p0) / p0
         max_return_1m = (p_max - p0) / p0
         
-        # 只對已到期的推薦判定最終勝負，未到期不納入勝率分母
+        # 勝負判定：僅計算已結算單
         is_win = 1 if (return_1m > 0 and is_completed) else 0
         reach_target = 1 if (target_price and p_max >= target_price) else 0
         
@@ -117,12 +127,13 @@ def evaluate_analyst_performance(recs_list, holding_days=HOLDING_TRADING_DAYS):
             "stock_name": stock_name,
             "rec_date": rec_date.strftime("%Y-%m-%d"),
             "entry_price": round(p0, 2),
-            "price_1m_after": round(p_end, 2) if is_completed else "追蹤中",
+            "latest_price": round(latest_price, 2),  # 💡 實體最新價格欄位
+            "price_1m_after": round(p_end, 2) if is_completed else None,
             "max_price_1m": round(p_max, 2),
             "return_1m_pct": round(return_1m * 100, 2),
             "max_return_pct": round(max_return_1m * 100, 2),
             "is_win": is_win,
-            "is_completed": is_completed,  # 標示是否已到期
+            "is_completed": is_completed,            # 是否滿 20 個交易日
             "reach_target": reach_target
         })
         
@@ -133,13 +144,20 @@ if __name__ == "__main__":
     details_df = evaluate_analyst_performance(recommendations)
 
     if not details_df.empty:
-        summary = details_df.groupby("analyst").agg(
-            total_recs=("is_win", "count"),
-            winning_recs=("is_win", "sum"),
-            win_rate_pct=("is_win", lambda x: round(x.mean() * 100, 2)),
-            avg_1m_return_pct=("return_1m_pct", "mean"),
-            avg_max_return_pct=("max_return_pct", "mean")
-        ).reset_index().sort_values(by="win_rate_pct", ascending=False)
+        # 只針對「已滿 20 個交易日結算」的單計算勝率
+        completed_df = details_df[details_df['is_completed'] == True]
+        
+        if not completed_df.empty:
+            summary = completed_df.groupby("analyst").agg(
+                total_recs=("is_win", "count"),
+                winning_recs=("is_win", "sum"),
+                win_rate_pct=("is_win", lambda x: round(x.mean() * 100, 2)),
+                avg_1m_return_pct=("return_1m_pct", "mean"),
+                avg_max_return_pct=("max_return_pct", "mean")
+            ).reset_index().sort_values(by="win_rate_pct", ascending=False)
+        else:
+            # 若無已結算單，建立空的排行榜以供 Telegram Bot 防錯呈現
+            summary = pd.DataFrame(columns=["analyst", "total_recs", "winning_recs", "win_rate_pct", "avg_1m_return_pct", "avg_max_return_pct"])
 
         report_text = format_report_message(summary, details_df)
         print("\n正在處理勝率報告...")
@@ -149,4 +167,4 @@ if __name__ == "__main__":
         else:
             print("❌ 處理失敗，請檢查設定。")
     else:
-        print("沒有足夠的歷史資料可進行計算。")
+        print("⚠️ 沒有足夠的歷史資料可進行計算。")
