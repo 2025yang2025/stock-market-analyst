@@ -1,6 +1,8 @@
 # telegram_bot.py
 import urllib.request
 import json
+import pandas as pd
+import datetime
 from settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 def send_telegram_message(message_text):
@@ -29,10 +31,11 @@ def send_telegram_message(message_text):
         return False
 
 def format_report_message(summary_df, details_df):
-    """格式化勝率統計與明細報表（包含推薦日期）"""
+    """格式化勝率統計與明細報表（包含最近 3 天推薦標的專區）"""
     msg = "📊 *【台股投顧/分析師勝率追蹤週報】*\n"
     msg += "-----------------------------------\n\n"
     
+    # --- A. 勝率排行榜 ---
     msg += "🏆 *分析師勝率排行榜*\n"
     for idx, row in summary_df.reset_index(drop=True).iterrows():
         rank = idx + 1
@@ -44,16 +47,36 @@ def format_report_message(summary_df, details_df):
         msg += f"  • 30天內最高衝高: `{row['avg_max_return_pct']:+.2f}%`\n\n"
         
     msg += "-----------------------------------\n"
-    msg += "🔍 *最新推薦績效明細*\n"
-    recent_details = details_df.head(15)  # 展示前 15 筆明細
+    
+    # --- B. 新增：最近 3 天推薦標的專區 ---
+    msg += "🔥 *【最近 3 天最新推薦標的】*\n"
+    if not details_df.empty:
+        # 以資料中最接近當前的推薦日期為基準，抓出 3 天內的紀錄
+        max_date = pd.to_datetime(details_df['rec_date']).max()
+        three_days_ago = max_date - datetime.timedelta(days=3)
+        
+        recent_3days_df = details_df[pd.to_datetime(details_df['rec_date']) >= three_days_ago].sort_values(by="rec_date", ascending=False)
+        
+        if not recent_3days_df.empty:
+            for idx, row in recent_3days_df.iterrows():
+                stock_disp = f"{row['ticker']} {row['stock_name']}".strip() if row.get('stock_name') else row['ticker']
+                msg += f"• *{stock_disp}*｜{row['analyst']}\n"
+                msg += f"  📅 日期: `{row['rec_date']}`｜💰 推薦時價格: `{row['entry_price']}`\n"
+        else:
+            msg += "  目前無最近 3 天內的最新推薦標的。\n"
+    else:
+        msg += "  尚無資料。\n"
+        
+    msg += "\n-----------------------------------\n"
+    
+    # --- C. 歷史推薦績效明細 ---
+    msg += "🔍 *歷史推薦績效明細 (部分展示)*\n"
+    recent_details = details_df.head(10)
     for idx, row in recent_details.iterrows():
         status = "✅ 勝" if row['is_win'] == 1 else "❌ 敗"
         stock_disp = f"{row['ticker']} {row['stock_name']}".strip() if row.get('stock_name') else row['ticker']
         rec_date = row.get('rec_date', '未知日期')
         
-        # 顯示格式：代碼 名稱 (分析師)
-        #           📅 推薦日: 2026-05-04
-        #           💰 買入價 ➔ 1月後價格 (報酬率 狀態)
         msg += f"• *{stock_disp}* ({row['analyst']})\n"
         msg += f"  📅 推薦日期: `{rec_date}`\n"
         msg += f"  💰 買入價: `{row['entry_price']}` ➔ 1月後: `{row['price_1m_after']}` ({row['return_1m_pct']:+.2f}% {status})\n\n"
