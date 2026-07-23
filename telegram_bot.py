@@ -12,7 +12,7 @@ def send_telegram_message(message_text):
         print("【預覽即將發送至 Telegram 的報告內容】：\n")
         print(message_text)
         print("======================================================================\n")
-        return True  # 回傳 True 讓主程式知道「測試預覽完成」
+        return True
         
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -35,7 +35,7 @@ def format_report_message(summary_df, details_df):
     msg = "📊 *【台股投顧/分析師勝率追蹤週報】*\n"
     msg += "-----------------------------------\n\n"
     
-    # --- A. 勝率排行榜 ---
+    # 1. 分析師勝率排行榜
     msg += "🏆 *分析師勝率排行榜*\n"
     for idx, row in summary_df.reset_index(drop=True).iterrows():
         rank = idx + 1
@@ -48,10 +48,9 @@ def format_report_message(summary_df, details_df):
         
     msg += "-----------------------------------\n"
     
-    # --- B. 新增：最近 3 天推薦標的專區 ---
+    # 2. 最近 3 天最新推薦標的專區
     msg += "🔥 *【最近 3 天最新推薦標的】*\n"
     if not details_df.empty:
-        # 以資料中最接近當前的推薦日期為基準，抓出 3 天內的紀錄
         max_date = pd.to_datetime(details_df['rec_date']).max()
         three_days_ago = max_date - datetime.timedelta(days=3)
         
@@ -61,7 +60,7 @@ def format_report_message(summary_df, details_df):
             for idx, row in recent_3days_df.iterrows():
                 stock_disp = f"{row['ticker']} {row['stock_name']}".strip() if row.get('stock_name') else row['ticker']
                 msg += f"• *{stock_disp}*｜{row['analyst']}\n"
-                msg += f"  📅 日期: `{row['rec_date']}`｜💰 推薦時價格: `{row['entry_price']}`\n"
+                msg += f"  📅 日期: `{row['rec_date']}`｜💰 推薦價: `{row['entry_price']}`\n"
         else:
             msg += "  目前無最近 3 天內的最新推薦標的。\n"
     else:
@@ -69,8 +68,8 @@ def format_report_message(summary_df, details_df):
         
     msg += "\n-----------------------------------\n"
     
-    # --- C. 歷史推薦績效明細 ---
-    msg += "🔍 *歷史推薦績效明細 (部分展示)*\n"
+    # 3. 歷史推薦績效明細
+    msg += "🔍 *歷史推薦績效明細*\n"
     recent_details = details_df.head(10)
     for idx, row in recent_details.iterrows():
         status = "✅ 勝" if row['is_win'] == 1 else "❌ 敗"
