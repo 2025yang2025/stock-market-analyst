@@ -15,6 +15,10 @@ on:
     branches:
       - main
 
+# 💡 賦予 GitHub Actions 寫入 repo 的權限 (用於將 recommendations.json commit 回去)
+permissions:
+  contents: write
+
 jobs:
   run-tracker:
     runs-on: ubuntu-latest
@@ -30,16 +34,29 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Step 3: 安裝相依套件
+      # Step 3: 安裝相依套件 (可根據 fetcher 需求補充 beautifulsoup4, requests 等)
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy
+          pip install pandas numpy requests beautifulsoup4
 
-      # Step 4: 執行主程式並載入 Secrets 金鑰
+      # Step 4: 執行爬蟲/自動化抓取腳本 (抓取最新推薦並更新 recommendations.json)
+      - name: Run Fetcher Script
+        run: |
+          python fetch_recommendations.py
+
+      # Step 5: 自動將更新後的 recommendations.json 提交 (Commit) 並 Push 回 GitHub
+      - name: Commit & Push Updated JSON
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add recommendations.json
+          # 若 recommendations.json 有變動才 commit，避免無新資料時建出空 commit 報錯
+          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: update recommendations.json" && git push)
+
+      # Step 6: 執行勝率分析主程式並載入 Telegram Secrets 金鑰發送週報
       - name: Run Analyst Tracker Script
         env:
-          # 從 GitHub Secrets 帶入設定好的變數
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
