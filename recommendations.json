@@ -1,28 +1,170 @@
 [
-  {"analyst": "元大投顧 - 顏承暉團隊", "ticker": "2330", "rec_date": "2026-07-20", "target_price": 1150},
-  {"analyst": "元大投顧 - 顏承暉團隊", "ticker": "2454", "rec_date": "2026-07-21", "target_price": 1400},
-  {"analyst": "凱基投顧 - 朱家傑團隊", "ticker": "2382", "rec_date": "2026-07-20", "target_price": 350},
-  {"analyst": "凱基投顧 - 朱家傑團隊", "ticker": "3231", "rec_date": "2026-07-22", "target_price": 135},
-  {"analyst": "富邦投顧 - 蕭乾祥", "ticker": "2317", "rec_date": "2026-07-18", "target_price": 230},
-  {"analyst": "富邦投顧 - 蕭乾祥", "ticker": "2308", "rec_date": "2026-07-21", "target_price": 400},
-  {"analyst": "群益投顧 - 廖健佑團隊", "ticker": "2303", "rec_date": "2026-07-19", "target_price": 62},
-  {"analyst": "群益投顧 - 廖健佑團隊", "ticker": "2330", "rec_date": "2026-07-22", "target_price": 1180},
-  {"analyst": "國泰投顧 - 蘇鼎文團隊", "ticker": "2454", "rec_date": "2026-07-20", "target_price": 1380},
-  {"analyst": "國泰投顧 - 蘇鼎文團隊", "ticker": "2317", "rec_date": "2026-07-23", "target_price": 225},
-
-  {"analyst": "老王 (王倚聖)", "ticker": "2330", "rec_date": "2026-07-21", "target_price": 1150},
-  {"analyst": "老王 (王倚聖)", "ticker": "2382", "rec_date": "2026-07-22", "target_price": 340},
-  {"analyst": "萬寶 - 莊正賢", "ticker": "2454", "rec_date": "2026-07-20", "target_price": 1380},
-  {"analyst": "萬寶 - 莊正賢", "ticker": "3231", "rec_date": "2026-07-23", "target_price": 130},
-  {"analyst": "林睿閎", "ticker": "2317", "rec_date": "2026-07-21", "target_price": 225},
-  {"analyst": "蔡豐勝", "ticker": "2303", "rec_date": "2026-07-22", "target_price": 60},
-  {"analyst": "涂敏豐", "ticker": "2382", "rec_date": "2026-07-21", "target_price": 345},
-  {"analyst": "劉妍希", "ticker": "3231", "rec_date": "2026-07-22", "target_price": 128},
-  {"analyst": "品豐大中華 - 連乾文", "ticker": "2330", "rec_date": "2026-07-20", "target_price": 1160},
-  {"analyst": "大華投顧 - 蘇建豐", "ticker": "2382", "rec_date": "2026-07-21", "target_price": 350},
-  {"analyst": "陳威良", "ticker": "2454", "rec_date": "2026-07-22", "target_price": 1360},
-  {"analyst": "阮蕙慈", "ticker": "2330", "rec_date": "2026-07-21", "target_price": 1140},
-  {"analyst": "李蜀芳", "ticker": "2317", "rec_date": "2026-07-20", "target_price": 220},
-  {"analyst": "王映亮", "ticker": "2303", "rec_date": "2026-07-23", "target_price": 61},
-  {"analyst": "許毓玲", "ticker": "2382", "rec_date": "2026-07-22", "target_price": 338}
+  {
+    "analyst": "元大投顧 - 顏承暉團隊",
+    "ticker": "2330",
+    "rec_date": "2026-07-20",
+    "target_price": 1150
+  },
+  {
+    "analyst": "元大投顧 - 顏承暉團隊",
+    "ticker": "2454",
+    "rec_date": "2026-07-21",
+    "target_price": 1400
+  },
+  {
+    "analyst": "凱基投顧 - 朱家傑團隊",
+    "ticker": "2382",
+    "rec_date": "2026-07-20",
+    "target_price": 350
+  },
+  {
+    "analyst": "凱基投顧 - 朱家傑團隊",
+    "ticker": "3231",
+    "rec_date": "2026-07-22",
+    "target_price": 135
+  },
+  {
+    "analyst": "富邦投顧 - 蕭乾祥",
+    "ticker": "2317",
+    "rec_date": "2026-07-18",
+    "target_price": 230
+  },
+  {
+    "analyst": "富邦投顧 - 蕭乾祥",
+    "ticker": "2308",
+    "rec_date": "2026-07-21",
+    "target_price": 400
+  },
+  {
+    "analyst": "群益投顧 - 廖健佑團隊",
+    "ticker": "2303",
+    "rec_date": "2026-07-19",
+    "target_price": 62
+  },
+  {
+    "analyst": "群益投顧 - 廖健佑團隊",
+    "ticker": "2330",
+    "rec_date": "2026-07-22",
+    "target_price": 1180
+  },
+  {
+    "analyst": "國泰投顧 - 蘇鼎文團隊",
+    "ticker": "2454",
+    "rec_date": "2026-07-20",
+    "target_price": 1380
+  },
+  {
+    "analyst": "國泰投顧 - 蘇鼎文團隊",
+    "ticker": "2317",
+    "rec_date": "2026-07-23",
+    "target_price": 225
+  },
+  {
+    "analyst": "老王 (王倚聖)",
+    "ticker": "2330",
+    "rec_date": "2026-07-21",
+    "target_price": 1150
+  },
+  {
+    "analyst": "老王 (王倚聖)",
+    "ticker": "2382",
+    "rec_date": "2026-07-22",
+    "target_price": 340
+  },
+  {
+    "analyst": "萬寶 - 莊正賢",
+    "ticker": "2454",
+    "rec_date": "2026-07-20",
+    "target_price": 1380
+  },
+  {
+    "analyst": "萬寶 - 莊正賢",
+    "ticker": "3231",
+    "rec_date": "2026-07-23",
+    "target_price": 130
+  },
+  {
+    "analyst": "林睿閎",
+    "ticker": "2317",
+    "rec_date": "2026-07-21",
+    "target_price": 225
+  },
+  {
+    "analyst": "蔡豐勝",
+    "ticker": "2303",
+    "rec_date": "2026-07-22",
+    "target_price": 60
+  },
+  {
+    "analyst": "涂敏豐",
+    "ticker": "2382",
+    "rec_date": "2026-07-21",
+    "target_price": 345
+  },
+  {
+    "analyst": "劉妍希",
+    "ticker": "3231",
+    "rec_date": "2026-07-22",
+    "target_price": 128
+  },
+  {
+    "analyst": "品豐大中華 - 連乾文",
+    "ticker": "2330",
+    "rec_date": "2026-07-20",
+    "target_price": 1160
+  },
+  {
+    "analyst": "大華投顧 - 蘇建豐",
+    "ticker": "2382",
+    "rec_date": "2026-07-21",
+    "target_price": 350
+  },
+  {
+    "analyst": "陳威良",
+    "ticker": "2454",
+    "rec_date": "2026-07-22",
+    "target_price": 1360
+  },
+  {
+    "analyst": "阮蕙慈",
+    "ticker": "2330",
+    "rec_date": "2026-07-21",
+    "target_price": 1140
+  },
+  {
+    "analyst": "李蜀芳",
+    "ticker": "2317",
+    "rec_date": "2026-07-20",
+    "target_price": 220
+  },
+  {
+    "analyst": "王映亮",
+    "ticker": "2303",
+    "rec_date": "2026-07-23",
+    "target_price": 61
+  },
+  {
+    "analyst": "許毓玲",
+    "ticker": "2382",
+    "rec_date": "2026-07-22",
+    "target_price": 338
+  },
+  {
+    "analyst": "老王 (王倚聖)",
+    "ticker": "2330",
+    "rec_date": "2026-07-28",
+    "target_price": null
+  },
+  {
+    "analyst": "萬寶 - 莊正賢",
+    "ticker": "2454",
+    "rec_date": "2026-07-28",
+    "target_price": null
+  },
+  {
+    "analyst": "陳威良",
+    "ticker": "3661",
+    "rec_date": "2026-07-28",
+    "target_price": null
+  }
 ]
