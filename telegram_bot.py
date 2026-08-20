@@ -71,23 +71,27 @@ def format_report_message(summary_df, details_df):
         
     msg += "\n-----------------------------------\n"
     
-    # 3. 歷史推薦績效明細（正確處理最新價數值）
+    # 3. 歷史推薦績效明細（完整輸出，依日期由新到舊排序）
     msg += "🔍 *推薦績效明細*\n"
-    recent_details = details_df.head(15)
-    for idx, row in recent_details.iterrows():
-        if row.get('is_completed', False):
-            status = "✅ 勝" if row['is_win'] == 1 else "❌ 敗"
-            price_str = f"1月後: `{row['price_1m_after']}` ({row['return_1m_pct']:+.2f}% {status})"
-        else:
-            # 💡 這裡精準取用 row['latest_price']，絕對不會再出現 null/None
-            latest_p = row.get('latest_price', row['entry_price'])
-            price_str = f"最新價: `{latest_p}` (目前 {row['return_1m_pct']:+.2f}% ⏳ 追蹤中)"
-            
-        stock_disp = f"{row['ticker']} {row['stock_name']}".strip() if row.get('stock_name') else row['ticker']
-        rec_date = row.get('rec_date', '未知日期')
+    if not details_df.empty:
+        # 💡 按推薦日期由新到舊排序，並放寬呈現筆數至 30 筆 (避免遺漏)
+        sorted_details = details_df.sort_values(by="rec_date", ascending=False).head(30)
         
-        msg += f"• *{stock_disp}* ({row['analyst']})\n"
-        msg += f"  📅 推薦日期: `{rec_date}`\n"
-        msg += f"  💰 買入價: `{row['entry_price']}` ➔ {price_str}\n\n"
+        for idx, row in sorted_details.iterrows():
+            if row.get('is_completed', False):
+                status = "✅ 勝" if row['is_win'] == 1 else "❌ 敗"
+                price_str = f"1月後: `{row['price_1m_after']}` ({row['return_1m_pct']:+.2f}% {status})"
+            else:
+                latest_p = row.get('latest_price', row['entry_price'])
+                price_str = f"最新價: `{latest_p}` (目前 {row['return_1m_pct']:+.2f}% ⏳ 追蹤中)"
+                
+            stock_disp = f"{row['ticker']} {row['stock_name']}".strip() if row.get('stock_name') else row['ticker']
+            rec_date = row.get('rec_date', '未知日期')
+            
+            msg += f"• *{stock_disp}* ({row['analyst']})\n"
+            msg += f"  📅 推薦日期: `{rec_date}`\n"
+            msg += f"  💰 買入價: `{row['entry_price']}` ➔ {price_str}\n\n"
+    else:
+        msg += "  尚無明細資料。\n"
         
     return msg
