@@ -34,11 +34,11 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Step 3: 安裝相依套件 (可根據 fetcher 需求補充 beautifulsoup4, requests 等)
+      # Step 3: 安裝相依套件 (已加入 yfinance)
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy requests beautifulsoup4 yifnance
+          pip install pandas numpy requests beautifulsoup4 yfinance
 
       # Step 4: 執行爬蟲/自動化抓取腳本 (抓取最新推薦並更新 recommendations.json)
       - name: Run Fetcher Script
